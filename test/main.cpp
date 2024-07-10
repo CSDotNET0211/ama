@@ -3,7 +3,7 @@
 
 #include "../ai/ai.h"
 
-void load_json_heuristic(Eval::Weight& h)
+void load_json_heuristic(Eval::Weight &h)
 {
     std::ifstream file;
     file.open("config.json");
@@ -16,7 +16,8 @@ void load_json_heuristic(Eval::Weight& h)
 void save_json_heuristic()
 {
     std::ifstream f("config.json");
-    if (f.good()) {
+    if (f.good())
+    {
         return;
     };
     f.close();
@@ -32,11 +33,13 @@ static Chain::Score get_score(std::vector<Cell::Pair> queue, Eval::Weight w)
 {
     Field field = Field();
 
-    auto best = Chain::Score { 0, 0 };
+    auto best = Chain::Score{0, 0};
 
+    // 60手試行？
     for (int i = 0; i < 60; ++i)
     {
         std::vector<Cell::Pair> tqueue;
+        // current,next1,next2？
         tqueue.push_back(queue[(i + 0) % queue.size()]);
         tqueue.push_back(queue[(i + 1) % queue.size()]);
         tqueue.push_back(queue[(i + 2) % queue.size()]);
@@ -48,14 +51,17 @@ static Chain::Score get_score(std::vector<Cell::Pair> queue, Eval::Weight w)
         auto mask = field.pop();
         auto chain = Chain::get_score(mask);
 
-        if (field.get_height(2) > 11) {
-            return { 0, 0 };
+        if (field.get_height(2) > 11)
+        {
+            return {0, 0};
         }
 
-        if (chain.score > best.score) {
+        if (chain.score > best.score)
+        {
             best = chain;
 
-            if (chain.score >= AI::TRIGGER_DEFAULT) {
+            if (chain.score >= AI::TRIGGER_DEFAULT)
+            {
                 break;
             }
         }
@@ -83,8 +89,7 @@ int main()
         ".....R",
         "R.....",
         "RR..BY",
-        "GGGBBY"
-    };
+        "GGGBBY"};
 
     // field.from(c);
 
@@ -115,19 +120,23 @@ int main()
 
     const i32 POPULATION_SIZE = 1000;
 
+    // 集団の初期化
     std::vector<Cell::Pair> queues[POPULATION_SIZE];
-    for (i32 i = 0; i < POPULATION_SIZE; ++i) {
+    for (i32 i = 0; i < POPULATION_SIZE; ++i)
+    {
         queues[i] = Cell::create_queue(rand() & 0xFFFF);
     }
 
     std::atomic<i32> progress = 0;
     std::vector<std::thread> threads;
 
-    std::atomic<i32> map_count[20] = { 0 };
-    std::atomic<i32> map_score[POPULATION_SIZE] = { 0 };
+    std::atomic<i32> map_count[20] = {0};
+    std::atomic<i32> map_score[POPULATION_SIZE] = {0};
 
-    for (i32 t = 0; t < 4; ++t) {
-        threads.emplace_back([&] (i32 tid) {
+    for (i32 t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&](i32 tid)
+                             {
             for (i32 i = 0; i < POPULATION_SIZE / 4; ++i) {
                 auto queue = queues[tid * POPULATION_SIZE / 4 + i];
 
@@ -138,23 +147,25 @@ int main()
 
                 progress += 1;
                 printf("\rprogress: %d", progress.load());
-            }
-        }, t);
+            } }, t);
     }
 
-    for (auto& thread : threads) {
+    for (auto &thread : threads)
+    {
         thread.join();
     }
 
     std::string score_str;
 
-    for (i32 i = 0; i < 20; ++i) {
+    for (i32 i = 0; i < 20; ++i)
+    {
         score_str += std::to_string(map_count[i].load()) + "\n";
     }
 
     score_str += "\n";
 
-    for (i32 i = 0; i < POPULATION_SIZE; ++i) {
+    for (i32 i = 0; i < POPULATION_SIZE; ++i)
+    {
         score_str += std::to_string(map_score[i].load()) + "\n";
     }
 

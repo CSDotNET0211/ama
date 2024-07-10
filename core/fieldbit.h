@@ -4,19 +4,23 @@
 #include "cell.h"
 #include "direction.h"
 
+/// @brief BitBoard
 class FieldBit
 {
 public:
     __m128i data;
+
 public:
     FieldBit();
+
 public:
-    bool operator == (const FieldBit& other);
-    bool operator != (const FieldBit& other);
-    FieldBit operator | (const FieldBit& other);
-    FieldBit operator & (const FieldBit& other);
-    FieldBit operator ^ (const FieldBit& other);
-    FieldBit operator ~ ();
+    bool operator==(const FieldBit &other);
+    bool operator!=(const FieldBit &other);
+    FieldBit operator|(const FieldBit &other);
+    FieldBit operator&(const FieldBit &other);
+    FieldBit operator^(const FieldBit &other);
+    FieldBit operator~();
+
 public:
     void set_bit(i8 x, i8 y);
     bool get_bit(i8 x, i8 y);
@@ -29,9 +33,11 @@ public:
     FieldBit get_mask_group(i8 x, i8 y);
     FieldBit get_mask_group_4(i8 x, i8 y);
     FieldBit get_mask_group_lsb();
+
 public:
     bool is_empty();
+
 public:
-    void pop(FieldBit& mask);
+    void pop(FieldBit &mask);
     void print();
 };

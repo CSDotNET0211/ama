@@ -3,33 +3,34 @@
 namespace Attack
 {
 
-Result search(
-    Field field,
-    std::vector<Cell::Pair> queue,
-    bool deep,
-    i32 frame_delay,
-    i32 thread_count
-)
-{
-    if (queue.size() <= 2) {
-        return Result();
-    }
+    Result search(
+        Field field,
+        std::vector<Cell::Pair> queue,
+        bool deep,
+        i32 frame_delay,
+        i32 thread_count)
+    {
+        if (queue.size() <= 2)
+        {
+            return Result();
+        }
 
-    Result result = Result();
+        Result result = Result();
 
-    Node root = Node {
-        .field = field,
-        .score = 0,
-        .frame = 0
-    };
+        Node root = Node{
+            .field = field,
+            .score = 0,
+            .frame = 0};
 
-    auto placements = Move::generate(field, queue[0].first == queue[0].second);
+        auto placements = Move::generate(field, queue[0].first == queue[0].second);
 
-    std::mutex mtx;
-    std::vector<std::thread> threads;
+        std::mutex mtx;
+        std::vector<std::thread> threads;
 
-    for (i32 t = 0; t < thread_count; ++t) {
-        threads.emplace_back([&] () {
+        for (i32 t = 0; t < thread_count; ++t)
+        {
+            threads.emplace_back([&]()
+                                 {
             while (true)
             {
                 Move::Placement placement;
@@ -106,80 +107,84 @@ Result search(
                     std::lock_guard<std::mutex> lk(mtx);
                     result.candidates.push_back(std::move(candidate));
                 }
-            }
-        });
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    return result;
-};
-
-void dfs(
-    Node& node,
-    std::vector<Cell::Pair>& queue,
-    Candidate& candidate,
-    i32 depth,
-    bool deep,
-    i32 frame_delay
-)
-{
-    auto placements = Move::generate(node.field, queue[depth].first == queue[depth].second);
-
-    for (i32 i = 0; i < placements.get_size(); ++i) {
-        auto child = node;
-        child.field.drop_pair(placements[i].x, placements[i].r, queue[depth]);
-        auto mask_pop = child.field.pop();
-
-        if (child.field.get_height(2) > 11) {
-            continue;
+            } });
         }
 
-        auto chain = Chain::get_score(mask_pop);
+        for (auto &t : threads)
+        {
+            t.join();
+        }
 
-        if (chain.count > 0) {
-            auto attack = Attack::Data {
-                .count = chain.count,
-                .score = chain.score,
-                .score_total = child.score + chain.score,
-                .frame = child.frame,
-                .frame_real = child.frame + node.field.get_drop_pair_frame(placements[i].x, placements[i].r),
-                .redundancy = INT32_MAX,
-                .all_clear = child.field.is_empty(),
-                .result = child.field
-            };
+        return result;
+    };
 
-            candidate.attacks.push_back(attack);
+    void dfs(
+        Node &node,
+        std::vector<Cell::Pair> &queue,
+        Candidate &candidate,
+        i32 depth,
+        bool deep,
+        i32 frame_delay)
+    {
+        auto placements = Move::generate(node.field, queue[depth].first == queue[depth].second);
 
-            if (attack.all_clear) {
-                candidate.attacks_ac.push_back(attack);
+        for (i32 i = 0; i < placements.get_size(); ++i)
+        {
+            auto child = node;
+            child.field.drop_pair(placements[i].x, placements[i].r, queue[depth]);
+            auto mask_pop = child.field.pop();
+
+            if (child.field.get_height(2) > 11)
+            {
+                continue;
             }
 
-            candidate.attack_max = std::max(
-                candidate.attack_max,
-                attack,
-                Attack::cmp_main
-            );
-        }
+            auto chain = Chain::get_score(mask_pop);
 
-        child.score += chain.score;
-        child.frame += node.field.get_drop_pair_frame(placements[i].x, placements[i].r) + chain.count * 2 + frame_delay;
+            if (chain.count > 0)
+            {
+                auto attack = Attack::Data{
+                    .count = chain.count,
+                    .score = chain.score,
+                    .score_total = child.score + chain.score,
+                    .frame = child.frame,
+                    .frame_real = child.frame + node.field.get_drop_pair_frame(placements[i].x, placements[i].r),
+                    .redundancy = INT32_MAX,
+                    .all_clear = child.field.is_empty(),
+                    .result = child.field};
 
-        if (depth + 1 < queue.size()) {
-            Attack::dfs(
-                child,
-                queue,
-                candidate,
-                depth + 1,
-                deep,
-                frame_delay
-            );
-        }
-        else {
-            if (deep) {
-                Quiet::search(child.field, 1, 2, [&] (Quiet::Result q) {
+                candidate.attacks.push_back(attack);
+
+                if (attack.all_clear)
+                {
+                    candidate.attacks_ac.push_back(attack);
+                }
+
+                candidate.attack_max = std::max(
+                    candidate.attack_max,
+                    attack,
+                    Attack::cmp_main);
+            }
+
+            child.score += chain.score;
+            child.frame += node.field.get_drop_pair_frame(placements[i].x, placements[i].r) + chain.count * 2 + frame_delay;
+
+            if (depth + 1 < queue.size())
+            {
+                Attack::dfs(
+                    child,
+                    queue,
+                    candidate,
+                    depth + 1,
+                    deep,
+                    frame_delay);
+            }
+            else
+            {
+                if (deep)
+                {
+                    Quiet::search(child.field, 1, 2, [&](Quiet::Result q)
+                                  {
                     auto plan_pop = q.plan;
                     plan_pop.pop();
 
@@ -192,11 +197,10 @@ void dfs(
                         .redundancy = INT32_MAX,
                         .all_clear = false,
                         .result = plan_pop,
-                    });
-                });
+                    }); });
+                }
             }
         }
-    }
-};
+    };
 
 };
