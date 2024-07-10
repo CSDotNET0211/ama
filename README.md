@@ -1,3 +1,5 @@
+# 日本語コメントVer
+
 # Ama
 <a href="https://ko-fi.com/citrus610">
     <img
